@@ -3,39 +3,43 @@ import cors from "cors";
 import fetch from "node-fetch";
 import https from "https";
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"]
+}));
 
 app.use(express.json());
 
+app.options("*", cors());
+
 const agent = new https.Agent({
-    rejectUnauthorized: false,
-    secureProtocol: "TLS_method"
+    rejectUnauthorized: false
 });
 
 app.get("/", (req, res) => {
 
-    res.send("Kerala Result Proxy Running");
+    res.json({
+        success: true,
+        message: "Kerala Result Proxy Running"
+    });
 });
 
 app.post("/result", async (req, res) => {
 
     try {
 
+        console.log("BODY:", req.body);
+
         const {
             regno,
             exam_type,
             dob
         } = req.body;
-
-        if (!regno || !exam_type || !dob) {
-
-            return res.status(400).json({
-                success: false,
-                error: "Missing required fields"
-            });
-        }
 
         const form = new URLSearchParams();
 
@@ -54,21 +58,32 @@ app.post("/result", async (req, res) => {
                     "User-Agent": "Mozilla/5.0"
                 },
 
-                body: form,
+                body: form.toString(),
 
                 agent
             }
         );
 
+        console.log("STATUS:", response.status);
+
         const html = await response.text();
 
-        res.setHeader("Content-Type", "text/html");
+        console.log("HTML RECEIVED");
+
+        res.setHeader("Access-Control-Allow-Origin", "*");
+
+        res.setHeader(
+            "Content-Type",
+            "text/html; charset=UTF-8"
+        );
 
         res.send(html);
 
-    } catch (err) {
+    } catch(err) {
 
-        console.error(err);
+        console.error("ERROR:", err);
+
+        res.setHeader("Access-Control-Allow-Origin", "*");
 
         res.status(500).json({
             success: false,
@@ -81,5 +96,5 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
 
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Running on ${PORT}`);
 });
