@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import https from "https";
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const app = express();
 
 app.use(cors());
